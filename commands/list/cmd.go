@@ -21,9 +21,6 @@ func NewListCommand(entityType string) Command {
 func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
 	simulationClient := doptApi.NewSimulationClient(conn)
 
-	fmt.Println(simulationClient)
-	fmt.Println("calling list execute")
-
 	switch cmd.entityType {
 	case "agents":
 		listAgents(simulationClient)

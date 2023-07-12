@@ -40,10 +40,7 @@ func LoadContext() (ClientContext, error) {
 }
 
 func initializeContextDir() {
-
-	stat, error := os.Stat(doptctlContextDir)
-	fmt.Println(stat)
-	fmt.Println(error)
+	_, error := os.Stat(doptctlContextDir)
 	if os.IsNotExist(error) {
 		log.Println("Dir doesn't exist, creating it")
 		error := os.MkdirAll(doptctlContextDir, os.ModePerm)
@@ -136,7 +133,6 @@ func getAllContexts() []ClientContext {
 }
 
 func writeContext(ctx ClientContext) {
-
 	ctxFilePath := doptctlContextDir + ctx.Name + ".json"
 	ctxBytes, marshalError := json.Marshal(ctx)
 	newContextFile, fileError := os.Create(ctxFilePath)

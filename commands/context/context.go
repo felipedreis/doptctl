@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 type ClientContext struct {
@@ -16,18 +17,18 @@ type ClientContext struct {
 }
 
 func (ctx ClientContext) URL() string {
-	return ctx.Name + ":" + ctx.Port
+	return ctx.Host + ":" + ctx.Port
 }
 
 var (
 	homeDir, _         = os.UserHomeDir()
-	doptctlContextDir  = homeDir + "/.doptctl/contexts/"
-	doptctlContextFile = homeDir + "/.doptctl/contexts/current.json"
+	doptctlContextDir  = filepath.Join(homeDir, ".doptctl", "contexts")
+	doptctlContextFile = filepath.Join(homeDir, ".doptctl", "contexts", "current.json")
 	clientContext      *ClientContext
 )
 
 func LoadContext() (ClientContext, error) {
-	ctx, error := readContext(doptctlContextFile)
+	ctx, error := readContext("current.json")
 
 	if os.IsNotExist(error) {
 		log.Fatal("No Current context set. Try running doptctl context configure or doptctl context set")
@@ -61,7 +62,7 @@ func createNewContext() *ClientContext {
 	fmt.Println("Context Name: ")
 	fmt.Scanln(&newContext.Name)
 
-	newContextFilePath := doptctlContextDir + newContext.Name + ".json"
+	newContextFilePath := filepath.Join(doptctlContextDir, newContext.Name+".json")
 
 	_, error := os.Stat(newContextFilePath)
 
@@ -93,7 +94,7 @@ func overrideCurrentContext(contextName string) {
 	}
 	defer currentContextFile.Close()
 
-	ctxFile, error := os.Open(doptctlContextDir + contextName + ".json")
+	ctxFile, error := os.Open(filepath.Join(doptctlContextDir, contextName+".json"))
 
 	if error != nil {
 		log.Fatal("Couldn't open " + contextName + " context file")
@@ -133,7 +134,7 @@ func getAllContexts() []ClientContext {
 }
 
 func writeContext(ctx ClientContext) {
-	ctxFilePath := doptctlContextDir + ctx.Name + ".json"
+	ctxFilePath := filepath.Join(doptctlContextDir, ctx.Name+".json")
 	ctxBytes, marshalError := json.Marshal(ctx)
 	newContextFile, fileError := os.Create(ctxFilePath)
 
@@ -153,7 +154,7 @@ func writeContext(ctx ClientContext) {
 
 func readContext(fileName string) (*ClientContext, error) {
 	var context ClientContext
-	file, error := os.Open(doptctlContextDir + fileName)
+	file, error := os.Open(filepath.Join(doptctlContextDir, fileName))
 
 	if error != nil {
 		return nil, error

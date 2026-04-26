@@ -1,0 +1,21 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+func main() {
+	var globalOpts map[string]string
+	input := []string{"--any=value", "list", "agents"}
+	
+	for _, value := range input {
+		if strings.Contains(value, "--") {
+			fmt.Println("Assigning to map...")
+			opts := strings.Split(value, "=")
+			globalOpts[opts[0]] = opts[1]
+		} else {
+			break
+		}
+	}
+}

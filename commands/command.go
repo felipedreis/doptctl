@@ -20,12 +20,14 @@ type Command interface {
 
 func Run(input []string) {
 	var lastIndex int
-	var globalOpts map[string]string
+	globalOpts := make(map[string]string)
 
 	for i, value := range input {
-		if strings.Contains(value, "--") {
+		if strings.HasPrefix(value, "--") {
 			opts := strings.Split(value, "=")
-			globalOpts[opts[0]] = opts[1]
+			if len(opts) == 2 {
+				globalOpts[opts[0]] = opts[1]
+			}
 		} else {
 			lastIndex = i
 			break
@@ -33,6 +35,9 @@ func Run(input []string) {
 	}
 
 	var command = getCommand(input[lastIndex:])
+	if command == nil {
+		return
+	}
 
 	// context commands operate over local files, and change current context
 	// this if prevents loading the current context

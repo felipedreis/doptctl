@@ -2,9 +2,9 @@
 
 ## Context
 Initial investigation of the `doptctl` codebase revealed critical bugs that prevent basic operation:
-1. `ClientContext.URL()` incorrectly uses `Name` instead of `Host`.
-2. `commands.Run` panics when global options are provided due to uninitialized map.
-3. `commands.getCommand` returns `nil` for unknown commands, causing dereference panics.
+1. `ClientContext.URL()` incorrectly uses `Name` instead of `Host`. (Ref: [Issue #1](https://github.com/felipedreis/doptctl/issues/1))
+2. `commands.Run` panics when global options are provided due to uninitialized map. (Ref: [Issue #2](https://github.com/felipedreis/doptctl/issues/2))
+3. `commands.getCommand` returns `nil` for unknown commands, causing dereference panics. (Ref: [Issue #2](https://github.com/felipedreis/doptctl/issues/2))
 
 ## Tasks
 - [x] Fix `commands.Run` uninitialized map panic.

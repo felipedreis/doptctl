@@ -7,7 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	doptApi "doptctl/doptimas/api"
+	doptApi "github.com/felipedreis/doptimas-proto-go/api"
 )
 
 type Command struct {
@@ -19,17 +19,17 @@ func NewListCommand(entityType string) Command {
 }
 
 func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
-	simulationClient := doptApi.NewSimulationClient(conn)
-
 	switch cmd.entityType {
 	case "agents":
-		listAgents(simulationClient)
+		agentClient := doptApi.NewAgentServiceClient(conn)
+		listAgents(agentClient)
 	case "regions":
-		listRegions(simulationClient)
+		regionClient := doptApi.NewRegionServiceClient(conn)
+		listRegions(regionClient)
 	}
 }
 
-func listAgents(client doptApi.SimulationClient) {
+func listAgents(client doptApi.AgentServiceClient) {
 	var req = new(doptApi.ListAgentRequest)
 	ans, error := client.ListAgents(context.Background(), req)
 	if error == nil {
@@ -43,7 +43,7 @@ func listAgents(client doptApi.SimulationClient) {
 	}
 }
 
-func listRegions(client doptApi.SimulationClient) {
+func listRegions(client doptApi.RegionServiceClient) {
 	var req = new(doptApi.ListRegionsRequest)
 	ans, error := client.ListRegions(context.Background(), req)
 

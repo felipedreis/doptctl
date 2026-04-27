@@ -2,6 +2,8 @@ package benchmark
 
 import (
 	"google.golang.org/grpc"
+
+	// doptApi "github.com/felipedreis/doptimas-proto-go/api"
 )
 
 type Command struct {
@@ -13,5 +15,5 @@ func NewBenchmarkCommand(subCommand string) *Command {
 }
 
 func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
-	//client := api.NewBenchmarkClient(conn)
+	//client := doptApi.NewBenchmarkServiceClient(conn)
 }

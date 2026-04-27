@@ -1,16 +1,18 @@
 module doptctl
 
-go 1.20
+go 1.24.0
+
+toolchain go1.24.5
 
 require (
-	google.golang.org/grpc v1.56.2
-	google.golang.org/protobuf v1.31.0
+	github.com/felipedreis/doptimas-proto-go v0.0.0-20260427193532-fcc1a4ef0216
+	google.golang.org/grpc v1.80.0
 )
 
 require (
-	github.com/golang/protobuf v1.5.3 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 )

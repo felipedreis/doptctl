@@ -81,9 +81,11 @@ The owner will review the changes.
 We use the GitHub CLI for managing the project's lifecycle. 
 
 #### Creating Issues
-When creating issues, use a detailed body that includes context, technical approach, classes to be touched, and verifiable acceptance criteria.
+When creating issues, use a detailed body. Using a heredoc with quotes (`<<'EOF'`) prevents the shell from interpreting special characters like backticks.
+
 ```bash
-gh issue create --title "[Category] Title" --body "### Context
+gh issue create --title "[Category] Title" --body - <<'EOF'
+### Context
 [Describe the problem or feature background]
 
 ### Technical Approach
@@ -93,14 +95,37 @@ gh issue create --title "[Category] Title" --body "### Context
 * [Reference the classes that will be touched]
 
 ### Acceptance Criteria
-* [List verifiable criteria that can be checked by AI or automated tests]"
+* [List verifiable criteria that can be checked by AI or automated tests]
+EOF
+```
+
+#### Creating Pull Requests
+When creating pull requests, use a structured body. Using a heredoc with quotes (`<<'EOF'`) is the most robust way to handle multi-line content.
+
+```bash
+gh pr create --title "[Category] Title" --body - <<'EOF'
+### Context
+[Describe the problem or feature background and link to issues]
+
+### Technical Approach
+[Describe the implementation details and design decisions]
+
+### Acceptance Criteria
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+
+Fixes #[Issue Number]
+EOF
 ```
 
 Common operations:
 - **List issues:** `gh issue list`
 - **View issue & comments:** `gh issue view <number> --comments`
 - **Close issue:** `gh issue close <number>`
-- **Comment on issue:** `gh issue comment <number> --body "..."`
+- **Comment on issue:** `gh issue comment <number> --body '...'`
+- **List PRs:** `gh pr list`
+- **View PR:** `gh pr view <number>`
+- **Edit PR:** `gh pr edit <number> --body '...'`
 
 ### Code Analysis & Discovery (GitNexus)
 Always use GitNexus tools to perform structured analysis of the codebase before proposing changes or creating issues.

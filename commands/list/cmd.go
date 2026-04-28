@@ -12,13 +12,22 @@ import (
 
 type Command struct {
 	entityType string
+	showHelp   bool
 }
 
-func NewListCommand(entityType string) Command {
-	return Command{entityType: entityType}
+func NewCommand(args []string) *Command {
+	if len(args) == 0 {
+		return &Command{showHelp: true}
+	}
+	return &Command{entityType: args[0]}
 }
 
 func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
+	if cmd.showHelp {
+		cmd.Help()
+		return
+	}
+
 	switch cmd.entityType {
 	case "agents":
 		agentClient := doptApi.NewAgentServiceClient(conn)
@@ -26,7 +35,13 @@ func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
 	case "regions":
 		regionClient := doptApi.NewRegionServiceClient(conn)
 		listRegions(regionClient)
+	default:
+		cmd.Help()
 	}
+}
+
+func (cmd Command) Help() {
+	Help()
 }
 
 func listAgents(client doptApi.AgentServiceClient) {

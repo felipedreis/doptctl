@@ -14,13 +14,22 @@ import (
 type Command struct {
 	subCommand string
 	params     []string
+	showHelp   bool
 }
 
-func NewSimulationCommand(subCommand string, params []string) *Command {
-	return &Command{subCommand: subCommand, params: params}
+func NewCommand(args []string) *Command {
+	if len(args) == 0 {
+		return &Command{showHelp: true}
+	}
+	return &Command{subCommand: args[0], params: args[1:]}
 }
 
 func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
+	if cmd.showHelp {
+		cmd.Help()
+		return
+	}
+
 	switch cmd.subCommand {
 	case "status":
 		cmd.handleStatus(conn)
@@ -31,8 +40,12 @@ func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
 	case "extractData":
 		cmd.handleExtractData(conn)
 	default:
-		log.Fatalf("Unknown simulation subcommand: %s", cmd.subCommand)
+		cmd.Help()
 	}
+}
+
+func (cmd Command) Help() {
+	Help()
 }
 
 func (cmd Command) handleStatus(conn *grpc.ClientConn) {
@@ -49,7 +62,8 @@ func (cmd Command) handleStatus(conn *grpc.ClientConn) {
 
 func (cmd Command) handleStart(conn *grpc.ClientConn) {
 	if len(cmd.params) < 1 {
-		log.Fatal("Missing configuration file path")
+		cmd.Help()
+		return
 	}
 	configPath := cmd.params[0]
 	content, err := os.ReadFile(configPath)

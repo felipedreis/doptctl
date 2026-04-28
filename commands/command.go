@@ -10,12 +10,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
-	"os"
 	"strings"
 )
 
 type Command interface {
 	Execute(conn *grpc.ClientConn, opts map[string]string)
+	Help()
 }
 
 func Run(input []string) {
@@ -70,21 +70,27 @@ func getConnection(serverAddr string) *grpc.ClientConn {
 }
 
 func getCommand(input []string) Command {
+	if len(input) == 0 {
+		Help()
+		return nil
+	}
+
 	var commandName = input[0]
+	var args = input[1:]
 
 	switch commandName {
 	case "benchmark":
-		return benchmark.NewBenchmarkCommand(input[1])
+		return benchmark.NewCommand(args)
 	case "context":
-		return context.NewContextCommand(input[1], input[2:])
+		return context.NewCommand(args)
 	case "describe":
-		return describe.NewDescribeCommand(input[1], input[2])
+		return describe.NewCommand(args)
 	case "list":
-		return list.NewListCommand(input[1])
+		return list.NewCommand(args)
 	case "simulation":
-		return simulation.NewSimulationCommand(input[1], input[2:])
+		return simulation.NewCommand(args)
 	case "help":
-		help(input[1:])
+		help(args)
 	default:
 		Help()
 	}
@@ -113,6 +119,4 @@ func help(input []string) {
 	} else {
 		Help()
 	}
-
-	os.Exit(0)
 }

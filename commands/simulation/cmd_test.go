@@ -58,7 +58,7 @@ func TestSimulationCommand_Execute(t *testing.T) {
 
 	// Test status
 	t.Run("status", func(t *testing.T) {
-		cmd := NewSimulationCommand("status", nil)
+		cmd := NewCommand([]string{"status"})
 		cmd.Execute(conn, nil)
 		if mockServer.lastMethod != "StatSimulation" {
 			t.Errorf("Expected method StatSimulation, got %s", mockServer.lastMethod)
@@ -67,7 +67,7 @@ func TestSimulationCommand_Execute(t *testing.T) {
 
 	// Test stop
 	t.Run("stop", func(t *testing.T) {
-		cmd := NewSimulationCommand("stop", nil)
+		cmd := NewCommand([]string{"stop"})
 		cmd.Execute(conn, nil)
 		if mockServer.lastMethod != "StopSimulation" {
 			t.Errorf("Expected method StopSimulation, got %s", mockServer.lastMethod)
@@ -89,7 +89,7 @@ func TestSimulationCommand_Execute(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		cmd := NewSimulationCommand("start", []string{tmpfile.Name()})
+		cmd := NewCommand([]string{"start", tmpfile.Name()})
 		cmd.Execute(conn, nil)
 		if mockServer.lastMethod != "StartSimulation" {
 			t.Errorf("Expected method StartSimulation, got %s", mockServer.lastMethod)

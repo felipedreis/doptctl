@@ -15,6 +15,7 @@ import (
 
 type Command interface {
 	Execute(conn *grpc.ClientConn, opts map[string]string)
+	Help()
 }
 
 func Run(input []string) {
@@ -75,40 +76,21 @@ func getCommand(input []string) Command {
 	}
 
 	var commandName = input[0]
+	var args = input[1:]
 
 	switch commandName {
 	case "benchmark":
-		if len(input) < 2 {
-			help([]string{"benchmark"})
-			return nil
-		}
-		return benchmark.NewBenchmarkCommand(input[1])
+		return benchmark.NewCommand(args)
 	case "context":
-		if len(input) < 2 {
-			help([]string{"context"})
-			return nil
-		}
-		return context.NewContextCommand(input[1], input[2:])
+		return context.NewCommand(args)
 	case "describe":
-		if len(input) < 3 {
-			help([]string{"describe"})
-			return nil
-		}
-		return describe.NewDescribeCommand(input[1], input[2])
+		return describe.NewCommand(args)
 	case "list":
-		if len(input) < 2 {
-			help([]string{"list"})
-			return nil
-		}
-		return list.NewListCommand(input[1])
+		return list.NewCommand(args)
 	case "simulation":
-		if len(input) < 2 {
-			help([]string{"simulation"})
-			return nil
-		}
-		return simulation.NewSimulationCommand(input[1], input[2:])
+		return simulation.NewCommand(args)
 	case "help":
-		help(input[1:])
+		help(args)
 	default:
 		Help()
 	}

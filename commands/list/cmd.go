@@ -2,6 +2,7 @@ package list
 
 import (
 	"context"
+	"doptctl/commands/output"
 	"fmt"
 	"log"
 
@@ -46,23 +47,36 @@ func (cmd Command) Help() {
 
 func listAgents(client doptApi.AgentServiceClient) {
 	var req = new(doptApi.ListAgentRequest)
-	ans, error := client.ListAgents(context.Background(), req)
-	if error == nil {
-		fmt.Println(ans)
+	ans, err := client.ListAgents(context.Background(), req)
+	if err == nil {
+		header := []string{"Name", "Metaheuristic", "Path"}
+		data := [][]string{}
 		for _, agent := range ans.Agents {
-			fmt.Println(agent)
+			data = append(data, []string{agent.Name, agent.Metaheuristic, agent.Path})
 		}
-
+		output.PrintTable(header, data)
 	} else {
-		log.Fatal(error)
+		log.Fatal(err)
 	}
 }
 
 func listRegions(client doptApi.RegionServiceClient) {
 	var req = new(doptApi.ListRegionsRequest)
-	ans, error := client.ListRegions(context.Background(), req)
+	ans, err := client.ListRegions(context.Background(), req)
 
-	if error == nil {
-		fmt.Println(ans)
+	if err == nil {
+		header := []string{"Name", "Time", "Path", "Solutions"}
+		data := [][]string{}
+		for _, region := range ans.Regions {
+			data = append(data, []string{
+				region.Name,
+				fmt.Sprintf("%d", region.Time),
+				region.Path,
+				fmt.Sprintf("%d", region.NumberOfSolutions),
+			})
+		}
+		output.PrintTable(header, data)
+	} else {
+		log.Fatal(err)
 	}
 }

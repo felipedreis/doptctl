@@ -1,6 +1,11 @@
 package describe
 
 import (
+	"context"
+	"doptctl/commands/output"
+	"fmt"
+	"log"
+
 	"github.com/felipedreis/doptimas-proto-go/api"
 	"google.golang.org/grpc"
 )
@@ -27,10 +32,10 @@ func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
 	switch cmd.entityType {
 	case "agent":
 		client := api.NewAgentServiceClient(conn)
-		describeAgent(client)
+		cmd.describeAgent(client)
 	case "region":
 		client := api.NewRegionServiceClient(conn)
-		describeRegion(client)
+		cmd.describeRegion(client)
 	default:
 		cmd.Help()
 	}
@@ -40,10 +45,49 @@ func (cmd Command) Help() {
 	Help()
 }
 
-func describeAgent(client api.AgentServiceClient) {
+func (cmd Command) describeAgent(client api.AgentServiceClient) {
+	req := &api.DescribeAgentRequest{AgentId: cmd.entityId}
+	resp, err := client.DescribeAgent(context.Background(), req)
+	if err != nil {
+		log.Fatalf("Error describing agent: %v", err)
+	}
 
+	data := [][]string{
+		{"Agent ID", resp.AgentId},
+		{"Heuristic", resp.Heuristic},
+		{"Lifetime", fmt.Sprintf("%d", resp.Lifetime)},
+		{"Start Time", fmt.Sprintf("%d", resp.StartTime)},
+		{"Current Time", fmt.Sprintf("%d", resp.CurrentTime)},
+		{"Executions", fmt.Sprintf("%d", resp.CompleteExecutions)},
+		{"Req. Solutions", fmt.Sprintf("%d", resp.RequiredSolutions)},
+		{"Memory Tax", fmt.Sprintf("%.2f", resp.MemoryTax)},
+	}
+
+	if resp.BestSolution != nil && len(resp.BestSolution.Y) > 0 {
+		data = append(data, []string{"Best Solution", fmt.Sprintf("%.4f", resp.BestSolution.Y[0])})
+	}
+
+	output.PrintVertical(data)
 }
 
-func describeRegion(client api.RegionServiceClient) {
+func (cmd Command) describeRegion(client api.RegionServiceClient) {
+	req := &api.DescribeRegionRequest{RegionId: cmd.entityId}
+	resp, err := client.DescribeRegion(context.Background(), req)
+	if err != nil {
+		log.Fatalf("Error describing region: %v", err)
+	}
 
+	data := [][]string{
+		{"Region ID", resp.RegionId},
+		{"Started", fmt.Sprintf("%t", resp.Started)},
+		{"Started Time", fmt.Sprintf("%d", resp.StartedTime)},
+		{"Current Time", fmt.Sprintf("%d", resp.CurrentTime)},
+		{"Solutions", fmt.Sprintf("%d", resp.NumberOfSolutions)},
+	}
+
+	if resp.BestSolution != nil && len(resp.BestSolution.Y) > 0 {
+		data = append(data, []string{"Best Solution", fmt.Sprintf("%.4f", resp.BestSolution.Y[0])})
+	}
+
+	output.PrintVertical(data)
 }

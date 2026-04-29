@@ -18,12 +18,13 @@ func NewCommand(args []string) *Command {
 	return &Command{subCommand: args[0]}
 }
 
-func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
+func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) error {
 	if cmd.showHelp {
 		cmd.Help()
-		return
+		return nil
 	}
 	//client := doptApi.NewBenchmarkServiceClient(conn)
+	return nil
 }
 
 func (cmd Command) Help() {

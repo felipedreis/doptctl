@@ -28,11 +28,14 @@ var (
 )
 
 func LoadContext() (ClientContext, error) {
-	ctx, error := readContext("current.json")
+	ctx, err := readContext("current.json")
 
-	if os.IsNotExist(error) {
-		log.Fatal("No Current context set. Try running doptctl context configure or doptctl context set")
-		os.Exit(1)
+	if os.IsNotExist(err) {
+		return ClientContext{}, fmt.Errorf("no current context set. Try running doptctl context configure or doptctl context set")
+	}
+
+	if err != nil {
+		return ClientContext{}, fmt.Errorf("couldn't load current context: %w", err)
 	}
 
 	setContext(ctx)
@@ -40,37 +43,39 @@ func LoadContext() (ClientContext, error) {
 	return *ctx, nil
 }
 
-func initializeContextDir() {
-	_, error := os.Stat(doptctlContextDir)
-	if os.IsNotExist(error) {
+func initializeContextDir() error {
+	_, err := os.Stat(doptctlContextDir)
+	if os.IsNotExist(err) {
 		log.Println("Dir doesn't exist, creating it")
-		error := os.MkdirAll(doptctlContextDir, os.ModePerm)
-		if error != nil {
-			log.Fatal("Couldn't create context dir")
-			os.Exit(1)
+		err := os.MkdirAll(doptctlContextDir, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("couldn't create context dir: %w", err)
 		}
-
 	}
+	return nil
 }
 
-func createNewContext() *ClientContext {
+func createNewContext() (*ClientContext, error) {
 	var newContext ClientContext
 	var confirm string
 
-	initializeContextDir()
+	err := initializeContextDir()
+	if err != nil {
+		return nil, err
+	}
 
 	fmt.Println("Context Name: ")
 	fmt.Scanln(&newContext.Name)
 
 	newContextFilePath := filepath.Join(doptctlContextDir, newContext.Name+".json")
 
-	_, error := os.Stat(newContextFilePath)
+	_, err = os.Stat(newContextFilePath)
 
-	if error == nil {
+	if err == nil {
 		fmt.Println("Context already exists, do you wanna override it[Y/n]?")
 		fmt.Scanln(&confirm)
 		if confirm == "n" {
-			return nil
+			return nil, nil
 		}
 	}
 
@@ -80,38 +85,39 @@ func createNewContext() *ClientContext {
 	fmt.Print("D-Optimas Port: ")
 	fmt.Scanln(&newContext.Port)
 
-	writeContext(newContext)
+	err = writeContext(newContext)
+	if err != nil {
+		return nil, err
+	}
 
-	return &newContext
+	return &newContext, nil
 }
 
-func overrideCurrentContext(contextName string) {
-	currentContextFile, error := os.Create(doptctlContextFile)
+func overrideCurrentContext(contextName string) error {
+	currentContextFile, err := os.Create(doptctlContextFile)
 
-	if error != nil {
-		log.Fatal("Couldn't open Current context file")
-		os.Exit(1)
+	if err != nil {
+		return fmt.Errorf("couldn't open current context file: %w", err)
 	}
 	defer currentContextFile.Close()
 
-	ctxFile, error := os.Open(filepath.Join(doptctlContextDir, contextName+".json"))
+	ctxFile, err := os.Open(filepath.Join(doptctlContextDir, contextName+".json"))
 
-	if error != nil {
-		log.Fatal("Couldn't open " + contextName + " context file")
-		os.Exit(1)
+	if err != nil {
+		return fmt.Errorf("couldn't open %s context file: %w", contextName, err)
 	}
 	defer ctxFile.Close()
 
-	io.Copy(currentContextFile, ctxFile)
+	_, err = io.Copy(currentContextFile, ctxFile)
+	return err
 }
 
-func getAllContexts() []ClientContext {
-	files, error := os.ReadDir(doptctlContextDir)
+func getAllContexts() ([]ClientContext, error) {
+	files, err := os.ReadDir(doptctlContextDir)
 	var doptctlContexts []ClientContext
 
-	if error != nil {
-		log.Fatal("Could not read doptctl context dir")
-		os.Exit(1)
+	if err != nil {
+		return nil, fmt.Errorf("could not read doptctl context dir: %w", err)
 	}
 
 	current, _ := readContext("current.json")
@@ -120,9 +126,8 @@ func getAllContexts() []ClientContext {
 		if file.IsDir() || file.Name() == "current.json" {
 			continue
 		}
-		fmt.Println(file.Name())
-		ctx, error := readContext(file.Name())
-		if error == nil {
+		ctx, err := readContext(file.Name())
+		if err == nil {
 			if current != nil && ctx.Name == current.Name {
 				ctx.current = true
 			}
@@ -130,26 +135,24 @@ func getAllContexts() []ClientContext {
 		}
 	}
 
-	return doptctlContexts
+	return doptctlContexts, nil
 }
 
-func writeContext(ctx ClientContext) {
+func writeContext(ctx ClientContext) error {
 	ctxFilePath := filepath.Join(doptctlContextDir, ctx.Name+".json")
 	ctxBytes, marshalError := json.Marshal(ctx)
-	newContextFile, fileError := os.Create(ctxFilePath)
-
 	if marshalError != nil {
-		log.Fatal("Couldn't marshal context to json")
-		os.Exit(1)
+		return fmt.Errorf("couldn't marshal context to json: %w", marshalError)
 	}
 
+	newContextFile, fileError := os.Create(ctxFilePath)
 	if fileError != nil {
-		log.Fatal("Couldn't create new context file ", ctxFilePath)
-		os.Exit(1)
+		return fmt.Errorf("couldn't create new context file %s: %w", ctxFilePath, fileError)
 	}
 	defer newContextFile.Close()
 
-	newContextFile.Write(ctxBytes)
+	_, err := newContextFile.Write(ctxBytes)
+	return err
 }
 
 func readContext(fileName string) (*ClientContext, error) {

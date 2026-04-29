@@ -1,7 +1,7 @@
 package context
 
 import (
-	"fmt"
+	"doptctl/commands/output"
 	"google.golang.org/grpc"
 )
 
@@ -27,25 +27,26 @@ func NewCommand(args []string) *Command {
 	return command
 }
 
-func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
+func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) error {
 	if cmd.showHelp {
 		cmd.Help()
-		return
+		return nil
 	}
 
 	switch cmd.commandType {
 	case "list":
-		listContexts()
+		return listContexts()
 	case "configure":
-		configureNewContext(cmd.opts)
+		return configureNewContext(cmd.opts)
 	case "set":
 		if len(cmd.args) == 0 {
 			cmd.Help()
-			return
+			return nil
 		}
-		setCurrentContext(cmd.args[0])
+		return setCurrentContext(cmd.args[0])
 	default:
 		cmd.Help()
+		return nil
 	}
 }
 
@@ -53,21 +54,40 @@ func (cmd Command) Help() {
 	Help()
 }
 
-func listContexts() {
-	ctxs := getAllContexts()
+func listContexts() error {
+	ctxs, err := getAllContexts()
+	if err != nil {
+		return err
+	}
 
+	header := []string{"", "Name", "Host", "Port"}
+	data := [][]string{}
 	for _, ctx := range ctxs {
-		fmt.Println(ctx.Name + ", " + ctx.Host + ", " + ctx.Port)
+		currentIndicator := ""
+		if ctx.current {
+			currentIndicator = "*"
+		}
+		data = append(data, []string{currentIndicator, ctx.Name, ctx.Host, ctx.Port})
 	}
+
+	output.PrintTable(header, data)
+	return nil
 }
 
-func configureNewContext(opts map[string]string) {
-	ctx := createNewContext()
+func configureNewContext(opts map[string]string) error {
+	ctx, err := createNewContext()
+	if err != nil {
+		return err
+	}
+	if ctx == nil {
+		return nil
+	}
 	if _, ok := opts["--set-current"]; ok {
-		setCurrentContext(ctx.Name)
+		return setCurrentContext(ctx.Name)
 	}
+	return nil
 }
 
-func setCurrentContext(contextName string) {
-	overrideCurrentContext(contextName)
+func setCurrentContext(contextName string) error {
+	return overrideCurrentContext(contextName)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"doptctl/commands/output"
 	"fmt"
-	"log"
 
 	"github.com/felipedreis/doptimas-proto-go/api"
 	"google.golang.org/grpc"
@@ -23,21 +22,22 @@ func NewCommand(args []string) *Command {
 	return &Command{entityType: args[0], entityId: args[1]}
 }
 
-func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
+func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) error {
 	if cmd.showHelp {
 		cmd.Help()
-		return
+		return nil
 	}
 
 	switch cmd.entityType {
 	case "agent":
 		client := api.NewAgentServiceClient(conn)
-		cmd.describeAgent(client)
+		return cmd.describeAgent(client)
 	case "region":
 		client := api.NewRegionServiceClient(conn)
-		cmd.describeRegion(client)
+		return cmd.describeRegion(client)
 	default:
 		cmd.Help()
+		return nil
 	}
 }
 
@@ -45,11 +45,11 @@ func (cmd Command) Help() {
 	Help()
 }
 
-func (cmd Command) describeAgent(client api.AgentServiceClient) {
+func (cmd Command) describeAgent(client api.AgentServiceClient) error {
 	req := &api.DescribeAgentRequest{AgentId: cmd.entityId}
 	resp, err := client.DescribeAgent(context.Background(), req)
 	if err != nil {
-		log.Fatalf("Error describing agent: %v", err)
+		return fmt.Errorf("error describing agent: %w", err)
 	}
 
 	data := [][]string{
@@ -68,13 +68,14 @@ func (cmd Command) describeAgent(client api.AgentServiceClient) {
 	}
 
 	output.PrintVertical(data)
+	return nil
 }
 
-func (cmd Command) describeRegion(client api.RegionServiceClient) {
+func (cmd Command) describeRegion(client api.RegionServiceClient) error {
 	req := &api.DescribeRegionRequest{RegionId: cmd.entityId}
 	resp, err := client.DescribeRegion(context.Background(), req)
 	if err != nil {
-		log.Fatalf("Error describing region: %v", err)
+		return fmt.Errorf("error describing region: %w", err)
 	}
 
 	data := [][]string{
@@ -90,4 +91,5 @@ func (cmd Command) describeRegion(client api.RegionServiceClient) {
 	}
 
 	output.PrintVertical(data)
+	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"doptctl/commands/output"
 	"fmt"
-	"log"
 
 	"google.golang.org/grpc"
 
@@ -23,21 +22,22 @@ func NewCommand(args []string) *Command {
 	return &Command{entityType: args[0]}
 }
 
-func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
+func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) error {
 	if cmd.showHelp {
 		cmd.Help()
-		return
+		return nil
 	}
 
 	switch cmd.entityType {
 	case "agents":
 		agentClient := doptApi.NewAgentServiceClient(conn)
-		listAgents(agentClient)
+		return listAgents(agentClient)
 	case "regions":
 		regionClient := doptApi.NewRegionServiceClient(conn)
-		listRegions(regionClient)
+		return listRegions(regionClient)
 	default:
 		cmd.Help()
+		return nil
 	}
 }
 
@@ -45,7 +45,7 @@ func (cmd Command) Help() {
 	Help()
 }
 
-func listAgents(client doptApi.AgentServiceClient) {
+func listAgents(client doptApi.AgentServiceClient) error {
 	var req = new(doptApi.ListAgentRequest)
 	ans, err := client.ListAgents(context.Background(), req)
 	if err == nil {
@@ -55,12 +55,13 @@ func listAgents(client doptApi.AgentServiceClient) {
 			data = append(data, []string{agent.Name, agent.Metaheuristic, agent.Path})
 		}
 		output.PrintTable(header, data)
+		return nil
 	} else {
-		log.Fatal(err)
+		return err
 	}
 }
 
-func listRegions(client doptApi.RegionServiceClient) {
+func listRegions(client doptApi.RegionServiceClient) error {
 	var req = new(doptApi.ListRegionsRequest)
 	ans, err := client.ListRegions(context.Background(), req)
 
@@ -76,7 +77,8 @@ func listRegions(client doptApi.RegionServiceClient) {
 			})
 		}
 		output.PrintTable(header, data)
+		return nil
 	} else {
-		log.Fatal(err)
+		return err
 	}
 }

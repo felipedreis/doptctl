@@ -6,15 +6,15 @@ import (
 	"doptctl/commands/describe"
 	"doptctl/commands/list"
 	"doptctl/commands/simulation"
+	"doptctl/doptimas/client"
 	"fmt"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"log"
+	"os"
 	"strings"
 )
 
 type Command interface {
-	Execute(conn *grpc.ClientConn, opts map[string]string)
+	Execute(conn *grpc.ClientConn, opts map[string]string) error
 	Help()
 }
 
@@ -42,31 +42,31 @@ func Run(input []string) {
 	// context commands operate over local files, and change current context
 	// this if prevents loading the current context
 	if input[lastIndex] == "context" {
-		command.Execute(nil, nil)
+		err := command.Execute(nil, nil)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 	} else {
-		ctx, error := context.LoadContext()
+		ctx, err := context.LoadContext()
 
-		if error != nil {
-			log.Fatalf("Couldn't load current context")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
 		}
 
-		conn := getConnection(ctx.URL())
+		conn, err := client.NewConnection(ctx.URL())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error connecting to %s: %v\n", ctx.URL(), err)
+			os.Exit(1)
+		}
 		defer conn.Close()
-		command.Execute(conn, globalOpts)
+		err = command.Execute(conn, globalOpts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 	}
-}
-
-func getConnection(serverAddr string) *grpc.ClientConn {
-	var opts []grpc.DialOption
-
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	conn, err := grpc.Dial(serverAddr, opts...)
-	if err != nil {
-		log.Fatalf("fail to dial: %v", err)
-	}
-
-	return conn
 }
 
 func getCommand(input []string) Command {

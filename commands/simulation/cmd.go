@@ -3,7 +3,6 @@ package simulation
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"google.golang.org/grpc"
@@ -24,23 +23,24 @@ func NewCommand(args []string) *Command {
 	return &Command{subCommand: args[0], params: args[1:]}
 }
 
-func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) {
+func (cmd Command) Execute(conn *grpc.ClientConn, opts map[string]string) error {
 	if cmd.showHelp {
 		cmd.Help()
-		return
+		return nil
 	}
 
 	switch cmd.subCommand {
 	case "status":
-		cmd.handleStatus(conn)
+		return cmd.handleStatus(conn)
 	case "start":
-		cmd.handleStart(conn)
+		return cmd.handleStart(conn)
 	case "stop":
-		cmd.handleStop(conn)
+		return cmd.handleStop(conn)
 	case "extractData":
-		cmd.handleExtractData(conn)
+		return cmd.handleExtractData(conn)
 	default:
 		cmd.Help()
+		return nil
 	}
 }
 
@@ -48,27 +48,28 @@ func (cmd Command) Help() {
 	Help()
 }
 
-func (cmd Command) handleStatus(conn *grpc.ClientConn) {
+func (cmd Command) handleStatus(conn *grpc.ClientConn) error {
 	client := doptApi.NewSimulationServiceClient(conn)
 	resp, err := client.StatSimulation(context.Background(), &doptApi.StatSimulationRequest{})
 	if err != nil {
-		log.Fatalf("Error getting simulation status: %v", err)
+		return fmt.Errorf("error getting simulation status: %w", err)
 	}
 	fmt.Printf("Status: %s\n", resp.Status)
 	if resp.Message != "" {
 		fmt.Printf("Message: %s\n", resp.Message)
 	}
+	return nil
 }
 
-func (cmd Command) handleStart(conn *grpc.ClientConn) {
+func (cmd Command) handleStart(conn *grpc.ClientConn) error {
 	if len(cmd.params) < 1 {
 		cmd.Help()
-		return
+		return nil
 	}
 	configPath := cmd.params[0]
 	content, err := os.ReadFile(configPath)
 	if err != nil {
-		log.Fatalf("Error reading configuration file: %v", err)
+		return fmt.Errorf("error reading configuration file: %w", err)
 	}
 
 	client := doptApi.NewSimulationServiceClient(conn)
@@ -76,26 +77,29 @@ func (cmd Command) handleStart(conn *grpc.ClientConn) {
 		ConfigurationFileContent: string(content),
 	})
 	if err != nil {
-		log.Fatalf("Error starting simulation: %v", err)
+		return fmt.Errorf("error starting simulation: %w", err)
 	}
 	fmt.Printf("Simulation started: %s\n", resp.Status)
 	if resp.Message != "" {
 		fmt.Printf("Message: %s\n", resp.Message)
 	}
+	return nil
 }
 
-func (cmd Command) handleStop(conn *grpc.ClientConn) {
+func (cmd Command) handleStop(conn *grpc.ClientConn) error {
 	client := doptApi.NewSimulationServiceClient(conn)
 	resp, err := client.StopSimulation(context.Background(), &doptApi.StopSimulationRequest{})
 	if err != nil {
-		log.Fatalf("Error stopping simulation: %v", err)
+		return fmt.Errorf("error stopping simulation: %w", err)
 	}
 	fmt.Printf("Simulation stopped: %s\n", resp.Status)
 	if resp.Message != "" {
 		fmt.Printf("Message: %s\n", resp.Message)
 	}
+	return nil
 }
 
-func (cmd Command) handleExtractData(conn *grpc.ClientConn) {
+func (cmd Command) handleExtractData(conn *grpc.ClientConn) error {
 	fmt.Println("ExtractData is not supported by the current API")
+	return nil
 }
